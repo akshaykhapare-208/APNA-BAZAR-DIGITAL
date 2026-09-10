@@ -21,7 +21,7 @@ def seed_database(force=False):
     db.settings.delete_many({})
     db.settings.insert_one({
         "shop_name": "APNA BAZAR",
-        "owner_name": "Rameshchandra Gupta",
+        "owner_name": "Akshay Khapare",
         "phone": "+91 98201 23456",
         "email": "apnabazar.mumbai@gmail.com",
         "address": "Shop No. 4, Station Road, Dadar West, Mumbai - 400028",
@@ -34,9 +34,9 @@ def seed_database(force=False):
     # 2. Users (Admin and Staff)
     db.users.delete_many({})
     admin_user = {
-        "name": "Ramesh Gupta (Owner)",
+        "name": "Akshay Khapare (Owner)",
         "username": "admin",
-        "email": "admin@ganeshstore.com",
+        "email": "admin@apnabazar.com",
         "password_hash": generate_password_hash("admin123"),
         "role": "Admin",
         "phone": "+91 98201 23456",

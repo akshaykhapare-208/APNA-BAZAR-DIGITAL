@@ -35,7 +35,7 @@ def inject_global_data():
     db = get_db()
     profile = db.settings.find_one() or {
         "shop_name": "APNA BAZAR",
-        "owner_name": "Ramesh Gupta",
+        "owner_name": "Akshay Khapare",
         "phone": "+91 98201 23456",
         "email": "apnabazar.mumbai@gmail.com",
         "address": "Shop 4, Station Road, Dadar West, Mumbai - 400028",
