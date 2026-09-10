@@ -1,0 +1,348 @@
+================================================================================
+          PROJECT IMPLEMENTATION PLAN & TECHNICAL EXECUTION REPORT
+                 "APNA BAZAR" - INVENTORY & BILLING SYSTEM
+             Community Engagement Project (CEP) - TY BSc IT
+================================================================================
+
+PROJECT TITLE: 
+APNA BAZAR — Inventory & Billing Management Software for Local Shops
+
+STUDENT / OWNER NAME: 
+Akshay Khapare
+
+ACADEMIC CONTEXT: 
+Third Year BSc Information Technology (TY BSc IT) - Community Engagement Project (CEP)
+
+TARGET AUDIENCE: 
+Small and local retail shop owners, provision stores, and grocery merchants.
+
+
+================================================================================
+1. EXECUTIVE SUMMARY & OBJECTIVE
+================================================================================
+Small retail shops in local communities often rely on physical notebooks, paper 
+cash memos, and mental arithmetic. This causes significant issues:
+  1. Billing arithmetic mistakes (miscalculated discounts and taxes).
+  2. Untracked customer credit / due balances (Khata records lost or disputed).
+  3. Stock mismatch and running out of essential grocery staples unexpectedly.
+  4. Undetected product expirations leading to financial loss and customer churn.
+
+"APNA BAZAR" replaces these manual paper-based processes with an easy-to-use, 
+lightweight, web-based digital inventory and point-of-sale billing application. 
+The system was designed following the philosophy of a realistic, high-quality 
+student project: transparent code, simple CRUD operations, zero over-engineering,
+and an elegant, distraction-free monochrome (black-and-white) user interface.
+
+
+================================================================================
+2. TECHNOLOGY STACK & REFERENCE DOCUMENTATION LINKS
+================================================================================
+
+A. BACKEND TECHNOLOGIES:
+--------------------------------------------------------------------------------
+1. Python (v3.9 - v3.14)
+   - Role: Core programming language for routing, calculations, and data logic.
+   - Reference: https://docs.python.org/3/
+
+2. Flask (v3.1.0)
+   - Role: Lightweight WSGI web framework for HTTP request dispatching, 
+     session cookies, flash notifications, and Jinja2 HTML rendering.
+   - Reference: https://flask.palletsprojects.com/en/stable/
+
+3. Werkzeug (v3.1.3)
+   - Role: Secure password hashing (generate_password_hash, check_password_hash)
+     and HTTP utilities.
+   - Reference: https://werkzeug.palletsprojects.com/en/stable/utils/#module-werkzeug.security
+
+4. PyMongo (v4.10.1) & dnspython
+   - Role: Official Python driver to connect and query MongoDB / MongoDB Atlas.
+   - Reference: https://pymongo.readthedocs.io/en/stable/
+   - Reference: https://dnspython.readthedocs.io/
+
+5. Python-Dotenv (v1.0.1)
+   - Role: Loads environment variables (.env) securely without hardcoding credentials.
+   - Reference: https://pypi.org/project/python-dotenv/
+
+6. Mongomock (v4.3.0)
+   - Role: High-fidelity in-memory MongoDB fallback engine used to ensure the app 
+     never crashes if internet drops or Atlas IP whitelist expires during viva.
+   - Reference: https://github.com/mongomock/mongomock
+
+
+B. FRONTEND & UI/UX TECHNOLOGIES:
+--------------------------------------------------------------------------------
+1. HTML5 & CSS3
+   - Role: Semantic document structure and custom print stylesheet media queries.
+   - Reference: https://developer.mozilla.org/en-US/docs/Web/HTML
+   - Reference: https://developer.mozilla.org/en-US/docs/Web/CSS/@media/print
+
+2. Tailwind CSS (Play CDN Engine)
+   - Role: Utility-first styling with custom monochrome design tokens.
+   - Reference: https://tailwindcss.com/docs/installation/play-cdn
+
+3. Lucide Line Icons
+   - Role: Minimal, lightweight SVG icons that complement the monochrome design.
+   - Reference: https://lucide.dev/guide/packages/lucide
+
+4. Chart.js (v4.x CDN)
+   - Role: Interactive responsive charts (7-day sales trend, monthly revenue, 
+     and top products horizontal ranking bar charts).
+   - Reference: https://www.chartjs.org/docs/latest/
+
+5. Vanilla JavaScript (ES6)
+   - Role: Real-time POS checkout calculation engine (Item Total, Tax, Grand Total,
+     Due Amount, and Stock Limit validation).
+   - Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+
+
+C. CLOUD DATABASE & DEPLOYMENT TARGET:
+--------------------------------------------------------------------------------
+1. MongoDB Atlas (Cloud NoSQL Database)
+   - Role: Multi-cloud document database hosting `inventory_billing_db`.
+   - Reference: https://www.mongodb.com/docs/atlas/
+   - Reference: https://www.mongodb.com/docs/atlas/security-whitelist/
+
+2. Git & GitHub
+   - Role: Version control and source code repository management.
+   - Reference: https://git-scm.com/doc
+   - Reference: https://docs.github.com/
+
+3. Render Cloud Application Host
+   - Role: PaaS deployment target for hosting Flask web applications.
+   - Reference: https://render.com/docs/deploy-flask
+
+
+================================================================================
+3. STEP-BY-STEP IMPLEMENTATION PROCESS (WHAT WE DID)
+================================================================================
+
+PHASE 1: Workspace Inspection & Architecture Planning
+--------------------------------------------------------------------------------
+- Inspected the local workspace (`d:/11-09-2026/`) and verified Python environment.
+- Formulated an exact 30-module architecture without unnecessary complexity.
+- Prepared `implementation_plan.md` detailing the schema, route handlers, and test plans.
+
+PHASE 2: Environment Configuration & Dependencies
+--------------------------------------------------------------------------------
+- Created `requirements.txt` containing only necessary packages:
+    Flask==3.1.0, pymongo==4.10.1, python-dotenv==1.0.1, Werkzeug==3.1.3, mongomock==4.3.0.
+- Created `.env` and `.env.example` storing `MONGO_URI`, `SECRET_KEY`, and `PORT`.
+- Configured `.gitignore` to prevent leaking database passwords or cache folders to GitHub.
+
+PHASE 3: Resilient Database Layer (`database.py`)
+--------------------------------------------------------------------------------
+- Connected directly to user's MongoDB Atlas cluster:
+    `cluster0.vwp0bzh.mongodb.net/inventory_billing_db`
+- Implemented automatic TLS certificate handling with `certifi`.
+- Built an automatic graceful local fallback to `mongomock`: if Atlas network IP 
+  is restricted or offline during viva examination, the app seamlessly runs on 
+  local high-fidelity storage with zero downtime.
+
+PHASE 4: Authentic Indian Local Store Seeder (`seed.py`)
+--------------------------------------------------------------------------------
+- Seeded the database with realistic retail data for "APNA BAZAR" (Owner: Akshay Khapare).
+- Default Demo Accounts:
+    * Admin: username `admin` / password `admin123`
+    * Staff: username `suresh` / password `staff123`
+- Realistic Categories: Grocery, Beverages, Snacks, Household, Personal Care, Stationery.
+- Realistic Products: Kolam Rice, Chakki Wheat Flour, Pure Sugar, Tata Gold Tea, 
+  Parle-G, Amul Milk, Dettol Soap, Clinic Plus Shampoo, Sunflower Oil, Salt, Notebooks.
+- Realistic Suppliers: Mumbai Wholesale Mart, Fresh Supply Co., Local Distributors.
+- Realistic Customers: Rahul Sharma, Priya Patil, Amit Shah, Neha Joshi.
+
+PHASE 5: Minimal Monochrome UI System & Layout (`templates/base.html`, `static/css/`)
+--------------------------------------------------------------------------------
+- Implemented a clean, modern black-and-white SaaS dashboard layout:
+    * Background: `#f9fafb` (off-white)
+    * Cards: pure white `#ffffff` with subtle borders (`#e5e7eb`)
+    * Primary buttons: near-black `#111827` with crisp white typography
+    * Secondary buttons: clean white with neat light-gray border
+- Left Sidebar: Grouped navigation for Inventory, Purchases, Sales, Reports, Settings.
+- Responsive mobile drawer with hamburger toggle.
+- Clean `@media print` CSS for browser printing of customer invoices.
+
+PHASE 6: Authentication & User Management (Modules 1 & 2)
+--------------------------------------------------------------------------------
+- Session-based login with Werkzeug password hashing.
+- Role-based route decorators (`@login_required`, `@admin_required`).
+- User Management CRUD: Add, edit, delete, and view users with role assignments.
+
+PHASE 7: Inventory, Categories, Search & Stock Adjustments (Modules 5-12)
+--------------------------------------------------------------------------------
+- Categories CRUD with automatic product counts.
+- Product catalog management with buying/selling rates, stock counts, and expiries.
+- Product search filtering by name, code (`PRD-1001`), and category.
+- Stock Overview with color-coded badges (`In Stock`, `Low Stock`, `Out of Stock`).
+- Low Stock Alerts table identifying all items where `Quantity <= Minimum Stock`.
+- Manual Stock Adjustment screen: Increase/decrease counts with audit reasons 
+  (Damaged goods, lost items, audit count reconciliation) saved in `stock_movements`.
+- Expiry Tracking screen: Highlights expired goods in red and items expiring in <= 30 days.
+
+PHASE 8: Suppliers & Purchase Management (Modules 13-15)
+--------------------------------------------------------------------------------
+- Wholesale supplier directory with contact names, phones, and warehouse addresses.
+- Purchase Entry form: Shopkeeper chooses supplier, products, quantity, and unit cost.
+- CRITICAL DATABASE RULE VERIFIED: 
+  Saving a purchase AUTOMATICALLY INCREMENTS product inventory stock in MongoDB.
+- Searchable Purchase History with date filters.
+
+PHASE 9: Customer Directory & Khata Due Tracking (Modules 16-19)
+--------------------------------------------------------------------------------
+- Customer profiles tracking contact details, total purchases, and outstanding dues.
+- Search customer by name or phone number.
+- Customer Ledger screen showing historical invoices and outstanding due balances.
+- Due / Payment tracking with transparent statuses: `Paid`, `Partial`, `Due`.
+
+PHASE 10: Point-of-Sale (POS) Billing & Invoicing (Modules 20-25)
+--------------------------------------------------------------------------------
+- Live interactive cart screen (`/sales/new`):
+  * Customer selection (walk-in or registered).
+  * Multiple product lines with live stock validation (prevents overselling).
+  * Real-time calculation: Item Total, Subtotal, Discount, Tax (GST%), Grand Total.
+  * Payment input: Auto-calculates remaining Due Amount and status badge.
+- Collision-free automatic sequential invoice numbers (`INV-0001`, `INV-0002`).
+- CRITICAL DATABASE RULE VERIFIED: 
+  Completing a bill AUTOMATICALLY DECREMENTS product stock in MongoDB.
+- Printable Tax Invoice screen (`/sales/<id>/invoice`): Formatted with store header, 
+  GSTIN, customer details, line items, and print button.
+- Sales History table with status filters (`Paid`, `Partial`, `Due`, `Cancelled`).
+- Sales Return / Cancel Bill: 
+  Cancelling an invoice marks status as `Cancelled` and AUTOMATICALLY RESTORES 
+  sold quantities back to inventory stock!
+
+PHASE 11: Analytical Reports & Charts (Modules 26-29)
+--------------------------------------------------------------------------------
+- Daily Sales Report: Bills count, net revenue, and units sold for any date.
+- Monthly Sales Report: Month-by-month billing totals + Chart.js daily revenue graph.
+- Top Selling Products: Ranks top 10 volume items + Chart.js horizontal bar chart.
+- Profit & Inventory Report: Transparent calculation of Estimated Gross Profit 
+  (`Revenue - Purchase Cost`) and total inventory asset valuation at cost and retail.
+
+PHASE 12: Shop Settings & Demo Seeder (Modules 4 & 30)
+--------------------------------------------------------------------------------
+- Shop profile configuration (Name: APNA BAZAR, Owner: Akshay Khapare, Phone, Address, GSTIN).
+- One-click demo data reset button for college viva demonstrations.
+
+PHASE 13: Comprehensive Automated Testing (`test_app.py`)
+--------------------------------------------------------------------------------
+- Wrote 8 integration test suites verifying:
+  1. Authentication & session security.
+  2. Live MongoDB retrieval on dashboard.
+  3. Category CRUD.
+  4. Product CRUD, code search, and category filter.
+  5. Supplier and Customer CRUD.
+  6. Stock Cycle Test: Initial 10 -> Purchase 5 -> 15 -> Sell 3 -> 12 -> Cancel -> 15.
+  7. Bill Calculation Test: ₹100x2 + ₹50x3 = Subtotal ₹350, Disc ₹20, Grand ₹330, Paid ₹300, Due ₹30.
+  8. All 4 Analytical Reports.
+- Executed via `python test_app.py` -> 100% Passed (8/8 tests OK in 10.75s).
+
+PHASE 14: Browser Verification & Screenshots
+--------------------------------------------------------------------------------
+- Verified application in browser subagent:
+  * Login flow with demo credentials.
+  * Interactive POS billing cart with live calculation.
+  * Generated tax invoice rendering with "APNA BAZAR" and "Akshay Khapare".
+  * Chart.js visualizations on dashboard and monthly report.
+  * Verified screenshot capture and updated walkthrough artifact.
+
+PHASE 15: Version Control & Git Repository Initialization
+--------------------------------------------------------------------------------
+- Initialized local Git repository with 40 tracked project files.
+- Committed all modules, templates, static assets, and documentation.
+
+
+================================================================================
+4. THE 30 FUNCTIONAL MODULES REFERENCE INDEX
+================================================================================
+
+MODULE 1:  Admin Login                     (/login, /logout)
+MODULE 2:  User Management                 (/users, /users/add, /users/edit/<id>, /users/delete/<id>)
+MODULE 3:  Dashboard                       (/dashboard)
+MODULE 4:  Shop Profile                    (/settings)
+MODULE 5:  Category Management             (/categories, /categories/add, /categories/edit/<id>, /categories/delete/<id>)
+MODULE 6:  Product Management              (/products, /products/add, /products/edit/<id>, /products/delete/<id>)
+MODULE 7:  Product Search                  (/products?q=...&category_id=...)
+MODULE 8:  Stock Management                (/stock)
+MODULE 9:  Low Stock Alert                 (/stock/low)
+MODULE 10: Stock Adjustment                (/stock/adjustment)
+MODULE 11: Expiry Tracking                 (/stock/expiry)
+MODULE 12: Product Code / Barcode          (/products?q=PRD-1001)
+MODULE 13: Supplier Management             (/suppliers, /suppliers/add, /suppliers/edit/<id>, /suppliers/delete/<id>)
+MODULE 14: Purchase Entry                  (/purchases/new)
+MODULE 15: Purchase History                (/purchases/history)
+MODULE 16: Customer Management             (/customers, /customers/add, /customers/edit/<id>, /customers/delete/<id>)
+MODULE 17: Customer Search                 (/customers?q=...)
+MODULE 18: Customer Purchase History       (/customers/<id>/history)
+MODULE 19: Customer Due / Payment Tracking (Customer Ledger & POS settlement)
+MODULE 20: New Billing (POS Screen)        (/sales/new)
+MODULE 21: Automatic Invoice Number        (INV-0001, INV-0002 auto sequence)
+MODULE 22: Automatic Bill Calculation      (Real-time JavaScript & Flask calculation)
+MODULE 23: Print / Download Invoice        (/sales/<id>/invoice)
+MODULE 24: Sales History                   (/sales/history)
+MODULE 25: Sales Return / Cancel Bill      (/sales/<id>/cancel & /sales/returns)
+MODULE 26: Daily Sales Report              (/reports/daily)
+MODULE 27: Monthly Sales Report            (/reports/monthly)
+MODULE 28: Top Selling Products            (/reports/top-products)
+MODULE 29: Profit & Inventory Report       (/reports/profit)
+MODULE 30: Settings & Seeder Tool          (/settings, /settings/reset-demo)
+
+
+================================================================================
+5. DATABASE LIFECYCLE & BUSINESS RULES
+================================================================================
+
+RULE 1: INWARD PURCHASE INCREMENT
+  Whenever a purchase is recorded from a wholesale vendor:
+    db.products.update_one({'_id': product_id}, {'$inc': {'quantity': purchased_qty}})
+  Stock immediately increases.
+
+RULE 2: SALES CHECKOUT DECREMENT
+  Whenever an invoice is completed:
+    db.products.update_one({'_id': product_id}, {'$inc': {'quantity': -sold_qty}})
+  Stock immediately decreases. If sold_qty > available stock, checkout is blocked.
+
+RULE 3: SALE RETURN / CANCELLATION RESTITUTION
+  Whenever a sale is cancelled:
+    db.products.update_one({'_id': product_id}, {'$inc': {'quantity': sold_qty}})
+  The sold items are returned to stock. The invoice is marked as 'Cancelled' 
+  (never permanently deleted, ensuring audit compliance).
+
+RULE 4: MATHEMATICAL BILLING FORMULAS
+  Item Total          = Quantity * Selling Price
+  Subtotal            = Sum of all Item Totals
+  Discounted Subtotal = Subtotal - Discount
+  Tax (GST)           = (Discounted Subtotal * Tax Rate %) / 100
+  Grand Total         = Discounted Subtotal + Tax
+  Due Amount          = Grand Total - Amount Paid by Customer
+
+
+================================================================================
+6. COLLEGE VIVA PRESENTATION & DEFENSE GUIDE
+================================================================================
+
+Q1: What is the primary purpose of your Community Engagement Project?
+A1: To assist small, unorganized local shopkeepers (such as Apna Bazar) in transitioning 
+    from manual paper khatas and cash memos to an error-free, automated inventory 
+    and billing management system that tracks real-time stock, customer dues, and profit.
+
+Q2: Why did you choose Python Flask instead of Django or Node.js?
+A2: Flask is a minimalist, flexible microframework that avoids enterprise boilerplate. 
+    It allows clear, readable Python functions for routing, easy integration with PyMongo, 
+    and straightforward session handling without unnecessary bloat.
+
+Q3: How is customer data and inventory stored in MongoDB?
+A3: Data is stored in JSON-like BSON documents across clean collections: products, 
+    categories, suppliers, purchases, customers, sales, stock_movements, and settings. 
+    Sales invoices store embedded item arrays, which naturally aligns with document-oriented NoSQL.
+
+Q4: How did you verify that stock updates and calculations are 100% accurate?
+A4: Through an automated unit test suite (`test_app.py`). It specifically executes 
+    the complete stock cycle: starting with 10 units, purchasing 5 (verified 15), 
+    selling 3 (verified 12), and cancelling the sale (verified restored back to 15), 
+    as well as exact subtotal, tax, discount, and due balance formulas.
+
+================================================================================
+Report Generated: September 2026
+Author: Akshay Khapare (TY BSc IT)
+Project: APNA BAZAR — Inventory & Billing Software for Local Shops
+================================================================================
