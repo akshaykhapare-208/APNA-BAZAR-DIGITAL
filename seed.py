@@ -20,10 +20,10 @@ def seed_database(force=False):
     # 1. Shop Settings (Shop Profile & App Config)
     db.settings.delete_many({})
     db.settings.insert_one({
-        "shop_name": "Shree Ganesh General Store",
+        "shop_name": "APNA BAZAR",
         "owner_name": "Rameshchandra Gupta",
         "phone": "+91 98201 23456",
-        "email": "ganeshstore.mumbai@gmail.com",
+        "email": "apnabazar.mumbai@gmail.com",
         "address": "Shop No. 4, Station Road, Dadar West, Mumbai - 400028",
         "gst_number": "27AAACG1234F1Z5",
         "tax_rate": 5.0,  # 5% default GST

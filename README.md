@@ -1,4 +1,4 @@
-# Inventory & Billing Management Software for Local Shops
+# APNA BAZAR — Inventory & Billing Management Software for Local Shops
 **TY BSc IT — Community Engagement Project (CEP)**
 
 A practical, clean, and reliable web-based Inventory and Point of Sale (POS) Billing Management System specifically engineered for small, local retail shops (such as general stores, provision stores, and grocery marts) to replace manual notebook-based accounts with a modern digital ledger.

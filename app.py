@@ -34,10 +34,10 @@ def inject_global_data():
     """Provides shop profile and active low-stock badge count to all templates."""
     db = get_db()
     profile = db.settings.find_one() or {
-        "shop_name": "Shree Ganesh General Store",
+        "shop_name": "APNA BAZAR",
         "owner_name": "Ramesh Gupta",
         "phone": "+91 98201 23456",
-        "email": "ganeshstore.mumbai@gmail.com",
+        "email": "apnabazar.mumbai@gmail.com",
         "address": "Shop 4, Station Road, Dadar West, Mumbai - 400028",
         "gst_number": "27AAACG1234F1Z5",
         "tax_rate": 5.0
