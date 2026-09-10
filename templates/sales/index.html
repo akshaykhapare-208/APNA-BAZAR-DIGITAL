@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Sales History - Inventory & Billing{% endblock %}
+{% block header_title %}Sales History & Billing Ledger{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Completed Shop Sales</h3>
+      <p class="text-xs text-gray-500">Track issued invoices, payment settlements, and customer returns</p>
+    </div>
+    <a href="{{ url_for('new_sale') }}" class="btn-primary">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>New Bill (POS)</span>
+    </a>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <form method="GET" action="{{ url_for('sales_history') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div>
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Search Invoice or Customer</label>
+        <div class="relative mt-1">
+          <input type="text" name="q" value="{{ query or '' }}" placeholder="INV-0001, Customer name..."
+            class="block w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+          <i data-lucide="search" class="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400"></i>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Payment Status</label>
+        <select name="status" class="mt-1 block w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none">
+          <option value="">All Statuses</option>
+          <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>Paid</option>
+          <option value="Partial" {% if selected_status == 'Partial' %}selected{% endif %}>Partial</option>
+          <option value="Due" {% if selected_status == 'Due' %}selected{% endif %}>Due</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Sale Date</label>
+        <input type="date" name="date" value="{{ selected_date or '' }}"
+          class="mt-1 block w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none">
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-primary text-xs py-1.5 px-3 flex-1 justify-center">
+          Filter
+        </button>
+        {% if query or selected_status or selected_date %}
+          <a href="{{ url_for('sales_history') }}" class="btn-secondary text-xs py-1.5 px-3">
+            Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Sales Table Card -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      {% if sales %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date & Time</th>
+              <th>Customer</th>
+              <th>Grand Total (₹)</th>
+              <th>Paid (₹)</th>
+              <th>Due (₹)</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for s in sales %}
+              <tr class="{% if s.status == 'Cancelled' %}bg-gray-50 opacity-80{% endif %}">
+                <td class="font-mono text-xs font-bold text-gray-900">
+                  <a href="{{ url_for('view_invoice', sale_id=s._id) }}" class="hover:underline">
+                    {{ s.invoice_number }}
+                  </a>
+                </td>
+                <td class="text-xs text-gray-500">{{ s.created_at_formatted }}</td>
+                <td>
+                  <p class="font-semibold text-xs text-gray-900">{{ s.customer_name }}</p>
+                  <p class="text-[11px] text-gray-400 font-mono">{{ s.customer_phone or '—' }}</p>
+                </td>
+                <td class="font-mono font-bold text-xs text-gray-900">
+                  ₹{{ "%.2f"|format(s.grand_total) }}
+                </td>
+                <td class="font-mono text-xs text-emerald-700">
+                  ₹{{ "%.2f"|format(s.paid_amount) }}
+                </td>
+                <td class="font-mono text-xs font-bold {% if s.due_amount > 0 %}text-amber-700{% else %}text-gray-400{% endif %}">
+                  ₹{{ "%.2f"|format(s.due_amount) }}
+                </td>
+                <td>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold {% if s.payment_status == 'Paid' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif s.payment_status == 'Partial' %}bg-amber-50 text-amber-800 border border-amber-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                    {{ s.payment_status }}
+                  </span>
+                </td>
+                <td>
+                  {% if s.status == 'Cancelled' %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-100 text-red-800">
+                      Cancelled
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-800">
+                      Completed
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right whitespace-nowrap space-x-1">
+                  <a href="{{ url_for('view_invoice', sale_id=s._id) }}" title="View & Print Invoice" class="btn-secondary text-[11px] py-1 px-2">
+                    Print
+                  </a>
+                  {% if s.status != 'Cancelled' %}
+                    <!-- Module 25: Return / Cancel Bill (Restores Stock) -->
+                    <a href="{{ url_for('cancel_sale', sale_id=s._id) }}" onclick="return confirm('Cancel this sale? This will automatically restore all sold quantities back into product stock.');" title="Cancel Sale & Restore Stock" class="btn-danger text-[11px] py-1 px-2">
+                      Cancel Bill
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-12 text-center">
+          <i data-lucide="receipt" class="w-10 h-10 mx-auto text-gray-300"></i>
+          <p class="mt-3 text-sm font-medium text-gray-700">No sales records found.</p>
+          <p class="text-xs text-gray-400">Generate customer bills to record shop sales transactions.</p>
+          <div class="mt-4">
+            <a href="{{ url_for('new_sale') }}" class="btn-primary text-xs">
+              Generate New Bill
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

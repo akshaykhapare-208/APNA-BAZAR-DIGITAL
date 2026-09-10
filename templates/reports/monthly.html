@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Sales Report - Inventory & Billing{% endblock %}
+{% block header_title %}Monthly Sales Report (Module 27){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header & Month Selector -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Monthly Sales Analysis</h3>
+      <p class="text-xs text-gray-500">Monthly totals, invoice volume, and daily revenue timeline</p>
+    </div>
+    <form method="GET" action="{{ url_for('monthly_report') }}" class="flex items-center gap-2">
+      <input type="month" name="month" value="{{ selected_month_str }}"
+        class="px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+      <button type="submit" class="btn-primary text-xs py-1.5 px-3">
+        Filter Month
+      </button>
+    </form>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Monthly Revenue</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2 font-mono">₹{{ "%.2f"|format(total_revenue) }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">Total billing value in {{ month_display }}</p>
+    </div>
+
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Total Invoices</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2">{{ total_bills }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">Bills issued this month</p>
+    </div>
+
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Total Units Sold</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2 font-mono">{{ total_items_sold }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">Products sold across all categories</p>
+    </div>
+  </div>
+
+  <!-- Chart.js Monthly Daily Distribution Graph -->
+  <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <div class="pb-3 border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider">Revenue Breakdown for {{ month_display }}</h4>
+        <p class="text-[11px] text-gray-400">Day-by-day sales trajectory</p>
+      </div>
+      <span class="text-xs text-gray-400 font-mono">Chart.js</span>
+    </div>
+    <div class="mt-4 h-64">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Chart.js Monthly Sales Graph
+  const monthlyLabels = {{ chart_labels | tojson }};
+  const monthlyData = {{ chart_values | tojson }};
+
+  const ctx = document.getElementById('monthlyChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Daily Sales (₹)',
+        data: monthlyData,
+        backgroundColor: '#111827',
+        borderRadius: 4,
+        maxBarThickness: 24
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          padding: 8,
+          cornerRadius: 6,
+          callbacks: {
+            label: function(ctx) {
+              return ' ₹' + Number(ctx.raw).toFixed(2);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#6b7280' }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f3f4f6' },
+          ticks: {
+            font: { size: 10 },
+            color: '#6b7280',
+            callback: function(v) { return '₹' + v; }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

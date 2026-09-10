@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase History - Inventory & Billing{% endblock %}
+{% block header_title %}Purchase History{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Vendor Purchase Records</h3>
+      <p class="text-xs text-gray-500">Historical stock procurements and supplier billing details</p>
+    </div>
+    <a href="{{ url_for('new_purchase') }}" class="btn-primary">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>New Purchase</span>
+    </a>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <form method="GET" action="{{ url_for('purchase_history') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Search by Supplier or Note</label>
+        <div class="relative mt-1">
+          <input type="text" name="q" value="{{ query or '' }}" placeholder="Supplier name or memo..."
+            class="block w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+          <i data-lucide="search" class="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400"></i>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-semibold text-gray-500 uppercase">Date</label>
+        <input type="date" name="date" value="{{ selected_date or '' }}"
+          class="mt-1 block w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+      </div>
+
+      <div class="flex items-end gap-2">
+        <button type="submit" class="btn-primary text-xs py-1.5 px-3 flex-1 justify-center">
+          Filter
+        </button>
+        {% if query or selected_date %}
+          <a href="{{ url_for('purchase_history') }}" class="btn-secondary text-xs py-1.5 px-3">
+            Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Purchases Table Card -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      {% if purchases %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Purchase Date</th>
+              <th>Supplier Name</th>
+              <th>Items Procured</th>
+              <th>Total Amount (₹)</th>
+              <th>Memo / Note</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for pur in purchases %}
+              <tr>
+                <td class="font-mono text-xs text-gray-600">{{ pur.created_at_formatted }}</td>
+                <td class="font-semibold text-gray-900">{{ pur.supplier_name }}</td>
+                <td class="text-xs text-gray-600">
+                  <div class="space-y-0.5">
+                    {% for itm in pur['items'] %}
+                      <div>{{ itm.product_name }} &times; {{ itm.quantity }} units @ ₹{{ "%.2f"|format(itm.purchase_price) }}</div>
+                    {% endfor %}
+                  </div>
+                </td>
+                <td class="font-bold text-sm font-mono text-gray-900">
+                  ₹{{ "%.2f"|format(pur.total_amount) }}
+                </td>
+                <td class="text-xs text-gray-500 max-w-xs truncate">{{ pur.note or '—' }}</td>
+                <td class="text-right">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700">
+                    Stock Added
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-12 text-center">
+          <i data-lucide="package-search" class="w-10 h-10 mx-auto text-gray-300"></i>
+          <p class="mt-3 text-sm font-medium text-gray-700">No purchase records found.</p>
+          <p class="text-xs text-gray-400">Record inventory orders to track wholesale expenditures.</p>
+          <div class="mt-4">
+            <a href="{{ url_for('new_purchase') }}" class="btn-primary text-xs">
+              Record Purchase
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} - {{ shop_profile.shop_name if shop_profile else 'Shop Inventory & Billing' }}</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#111827',
+              gray: '#4b5563',
+              light: '#f9fafb',
+              border: '#e5e7eb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full antialiased text-gray-900 bg-[#f9fafb]">
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 z-40 hidden bg-black/40 lg:hidden"></div>
+
+  <div class="flex h-screen overflow-hidden">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 flex flex-col w-64 transition-transform duration-200 ease-in-out -translate-x-full bg-white border-r border-gray-200 lg:static lg:translate-x-0">
+      
+      <!-- Logo & Shop Name -->
+      <div class="flex items-center justify-between h-16 px-5 border-b border-gray-200">
+        <a href="{{ url_for('dashboard') }}" class="flex items-center gap-2.5">
+          <div class="flex items-center justify-center w-8 h-8 font-bold text-white bg-black rounded-lg">
+            <i data-lucide="store" class="w-4 h-4"></i>
+          </div>
+          <div class="overflow-hidden">
+            <h1 class="text-sm font-semibold tracking-tight text-gray-900 truncate">
+              {{ shop_profile.shop_name if shop_profile else 'Ganesh Store' }}
+            </h1>
+            <p class="text-[11px] text-gray-400 uppercase tracking-wider font-medium">BSc IT CEP</p>
+          </div>
+        </a>
+        <button id="close-sidebar-btn" class="p-1 text-gray-400 rounded-md hover:text-black lg:hidden" onclick="document.getElementById('sidebar-overlay').click()">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        
+        <!-- Main Dashboard -->
+        <div>
+          <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'dashboard' %}bg-black text-white{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>Dashboard</span>
+          </a>
+        </div>
+
+        <!-- Inventory Section -->
+        <div>
+          <p class="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Inventory</p>
+          <div class="space-y-0.5">
+            <a href="{{ url_for('products') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'products' or request.endpoint == 'add_product' or request.endpoint == 'edit_product' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="package" class="w-4 h-4"></i>
+              <span>Products</span>
+            </a>
+            <a href="{{ url_for('categories') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'categories' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="folder-tree" class="w-4 h-4"></i>
+              <span>Categories</span>
+            </a>
+            <a href="{{ url_for('stock_management') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'stock_management' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="boxes" class="w-4 h-4"></i>
+              <span>Stock Overview</span>
+            </a>
+            <a href="{{ url_for('low_stock') }}" class="flex items-center justify-between px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'low_stock' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <div class="flex items-center gap-3">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
+                <span>Low Stock</span>
+              </div>
+              {% if low_stock_count and low_stock_count > 0 %}
+              <span class="px-1.5 py-0.5 text-xs font-semibold bg-gray-200 text-gray-800 rounded">{{ low_stock_count }}</span>
+              {% endif %}
+            </a>
+            <a href="{{ url_for('expiry_tracking') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'expiry_tracking' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="calendar-off" class="w-4 h-4"></i>
+              <span>Expiry Tracking</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Purchases Section -->
+        <div>
+          <p class="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Purchases</p>
+          <div class="space-y-0.5">
+            <a href="{{ url_for('suppliers') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'suppliers' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="truck" class="w-4 h-4"></i>
+              <span>Suppliers</span>
+            </a>
+            <a href="{{ url_for('new_purchase') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'new_purchase' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Purchase Entry</span>
+            </a>
+            <a href="{{ url_for('purchase_history') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'purchase_history' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="history" class="w-4 h-4"></i>
+              <span>Purchase History</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Sales & Billing Section -->
+        <div>
+          <p class="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Sales & Billing</p>
+          <div class="space-y-0.5">
+            <a href="{{ url_for('new_sale') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-semibold text-white bg-black rounded-md hover:bg-gray-800 transition-colors shadow-sm">
+              <i data-lucide="receipt" class="w-4 h-4"></i>
+              <span>New Bill (POS)</span>
+            </a>
+            <a href="{{ url_for('customers') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'customers' or request.endpoint == 'customer_history' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              <span>Customers</span>
+            </a>
+            <a href="{{ url_for('sales_history') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'sales_history' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Sales History</span>
+            </a>
+            <a href="{{ url_for('returns_list') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'returns_list' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              <span>Returns / Cancelled</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div>
+          <p class="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Reports</p>
+          <div class="space-y-0.5">
+            <a href="{{ url_for('daily_report') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'daily_report' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+              <span>Daily Sales</span>
+            </a>
+            <a href="{{ url_for('monthly_report') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'monthly_report' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+              <span>Monthly Sales</span>
+            </a>
+            <a href="{{ url_for('top_products_report') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'top_products_report' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="award" class="w-4 h-4"></i>
+              <span>Top Products</span>
+            </a>
+            <a href="{{ url_for('profit_report') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'profit_report' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="pie-chart" class="w-4 h-4"></i>
+              <span>Profit & Inventory</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div>
+          <p class="px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Settings</p>
+          <div class="space-y-0.5">
+            {% if session.get('user_role') == 'Admin' %}
+            <a href="{{ url_for('users') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'users' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="user-cog" class="w-4 h-4"></i>
+              <span>User Management</span>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('settings') }}" class="flex items-center gap-3 px-3 py-1.5 text-sm font-medium rounded-md transition-colors {% if request.endpoint == 'settings' %}bg-gray-100 text-black font-semibold{% else %}text-gray-600 hover:bg-gray-50 hover:text-black{% endif %}">
+              <i data-lucide="settings" class="w-4 h-4"></i>
+              <span>Shop Profile</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- User Info & Logout -->
+      <div class="p-3 border-t border-gray-200 bg-gray-50/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <div class="flex items-center justify-center w-8 h-8 font-semibold text-white bg-gray-800 rounded-full text-xs">
+              {{ session.get('username', 'U')[0]|upper }}
+            </div>
+            <div class="overflow-hidden leading-tight">
+              <p class="text-xs font-semibold text-gray-900 truncate">{{ session.get('user_name', session.get('username', 'User')) }}</p>
+              <span class="inline-block text-[10px] text-gray-500 font-medium uppercase">{{ session.get('user_role', 'Staff') }}</span>
+            </div>
+          </div>
+          <a href="{{ url_for('logout') }}" title="Logout" class="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </a>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+      
+      <!-- Top Header -->
+      <header id="top-header" class="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 sm:px-6">
+        <div class="flex items-center gap-3">
+          <button id="mobile-menu-btn" class="p-2 text-gray-500 rounded-md hover:bg-gray-100 lg:hidden">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">{% block header_title %}Overview{% endblock %}</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Database status indicator -->
+          <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded-full" title="MongoDB Connection Status">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>MongoDB Connected</span>
+          </div>
+
+          <!-- Quick Action: New Bill -->
+          <a href="{{ url_for('new_sale') }}" class="btn-primary text-xs py-1.5 px-3">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>New Bill</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Main Body Scroll Area -->
+      <main id="main-content" class="flex-1 p-4 overflow-y-auto sm:p-6 lg:p-8">
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-2 mb-6">
+              {% for category, message in messages %}
+                <div class="flash-alert flex items-center justify-between px-4 py-3 text-sm rounded-lg border {% if category == 'error' %}bg-red-50 text-red-800 border-red-200{% elif category == 'warning' %}bg-amber-50 text-amber-800 border-amber-200{% else %}bg-emerald-50 text-emerald-800 border-emerald-200{% endif %}">
+                  <div class="flex items-center gap-2">
+                    {% if category == 'error' %}
+                      <i data-lucide="alert-circle" class="w-4 h-4 text-red-600"></i>
+                    {% elif category == 'warning' %}
+                      <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
+                    {% else %}
+                      <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                    {% endif %}
+                    <span>{{ message }}</span>
+                  </div>
+                  <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Child Page Content -->
+        {% block content %}{% endblock %}
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

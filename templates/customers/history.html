@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} - Purchase History{% endblock %}
+{% block header_title %}Customer Ledger & Bills{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Customer Summary Card -->
+  <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+      <div>
+        <div class="flex items-center gap-2">
+          <h3 class="text-xl font-bold text-gray-900">{{ customer.name }}</h3>
+          <a href="{{ url_for('edit_customer', cust_id=customer._id) }}" class="text-xs text-gray-400 hover:text-black">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+        <p class="text-xs text-gray-500 font-mono mt-0.5">{{ customer.phone }} • {{ customer.email or 'No email' }}</p>
+        <p class="text-xs text-gray-600 mt-1">{{ customer.address or 'Address not specified' }}</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('new_sale') }}?customer_id={{ customer._id }}" class="btn-primary text-xs">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Create New Bill</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Financial Stats Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+      <div class="p-3 bg-gray-50 rounded-lg">
+        <p class="text-[11px] font-semibold text-gray-500 uppercase">Total Invoices</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">{{ customer_sales|length }}</p>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg">
+        <p class="text-[11px] font-semibold text-gray-500 uppercase">Lifetime Billed (₹)</p>
+        <p class="text-lg font-bold text-gray-900 mt-1">₹{{ "%.2f"|format(lifetime_billed) }}</p>
+      </div>
+      <div class="p-3 rounded-lg {% if customer.total_due and customer.total_due > 0 %}bg-amber-50 border border-amber-200{% else %}bg-gray-50{% endif %}">
+        <p class="text-[11px] font-semibold {% if customer.total_due and customer.total_due > 0 %}text-amber-800{% else %}text-gray-500{% endif %} uppercase">
+          Outstanding Due Balance
+        </p>
+        <p class="text-lg font-bold {% if customer.total_due and customer.total_due > 0 %}text-amber-800{% else %}text-emerald-700{% endif %} mt-1">
+          ₹{{ "%.2f"|format(customer.total_due or 0) }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Bills Table -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider">Purchase History & Invoices</h4>
+      <span class="text-xs text-gray-400">{{ customer_sales|length }} records</span>
+    </div>
+
+    <div class="overflow-x-auto">
+      {% if customer_sales %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Invoice No.</th>
+              <th>Date</th>
+              <th>Items</th>
+              <th>Grand Total</th>
+              <th>Paid Amount</th>
+              <th>Due Amount</th>
+              <th>Payment Status</th>
+              <th>Bill Status</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for s in customer_sales %}
+              <tr>
+                <td class="font-mono text-xs font-bold text-gray-900">
+                  <a href="{{ url_for('view_invoice', sale_id=s._id) }}" class="hover:underline">
+                    {{ s.invoice_number }}
+                  </a>
+                </td>
+                <td class="text-xs text-gray-500">{{ s.created_at_formatted }}</td>
+                <td class="text-xs text-gray-600">{{ s['items']|length }} item{{ 's' if s['items']|length != 1 else '' }}</td>
+                <td class="font-mono font-bold text-xs text-gray-900">₹{{ "%.2f"|format(s.grand_total) }}</td>
+                <td class="font-mono text-xs text-emerald-700">₹{{ "%.2f"|format(s.paid_amount) }}</td>
+                <td class="font-mono text-xs font-bold {% if s.due_amount > 0 %}text-amber-700{% else %}text-gray-400{% endif %}">
+                  ₹{{ "%.2f"|format(s.due_amount) }}
+                </td>
+                <td>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium {% if s.payment_status == 'Paid' %}bg-emerald-50 text-emerald-800 border border-emerald-200{% elif s.payment_status == 'Partial' %}bg-amber-50 text-amber-800 border border-amber-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                    {{ s.payment_status }}
+                  </span>
+                </td>
+                <td>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium {% if s.status == 'Cancelled' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ s.status }}
+                  </span>
+                </td>
+                <td class="text-right whitespace-nowrap space-x-1">
+                  <a href="{{ url_for('view_invoice', sale_id=s._id) }}" class="btn-secondary text-[11px] py-1 px-2">
+                    Print / View
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-10 text-center text-xs text-gray-400">
+          No previous invoices found for this customer.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - Inventory & Billing{% endblock %}
+{% block header_title %}Customer Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Customer Directory & Due Tracking</h3>
+      <p class="text-xs text-gray-500">Manage customer contacts, purchase history, and outstanding balances (Khata)</p>
+    </div>
+    <a href="{{ url_for('add_customer') }}" class="btn-primary">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>Add Customer</span>
+    </a>
+  </div>
+
+  <!-- Search Bar (Module 17: Search by Name or Phone) -->
+  <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <form method="GET" action="{{ url_for('customers') }}" class="flex flex-col sm:flex-row gap-3">
+      <div class="relative flex-1">
+        <input type="text" name="q" value="{{ query or '' }}" placeholder="Search customer by name or phone number..."
+          class="block w-full pl-9 pr-4 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+        <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+      </div>
+      <button type="submit" class="btn-primary text-xs py-2 px-4 justify-center">
+        Search
+      </button>
+      {% if query %}
+        <a href="{{ url_for('customers') }}" class="btn-secondary text-xs py-2 px-4">
+          Reset
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Customer Table Card -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      {% if customers %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Customer Name</th>
+              <th>Phone Number</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Outstanding Due (₹)</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for cust in customers %}
+              <tr>
+                <td class="font-semibold text-gray-900">
+                  <a href="{{ url_for('customer_history', cust_id=cust._id) }}" class="hover:underline">
+                    {{ cust.name }}
+                  </a>
+                </td>
+                <td class="font-mono text-xs text-gray-700">{{ cust.phone }}</td>
+                <td class="text-xs text-gray-500">{{ cust.email or '—' }}</td>
+                <td class="text-xs text-gray-600 max-w-xs truncate">{{ cust.address or '—' }}</td>
+                <td>
+                  <!-- Module 19: Due Tracking -->
+                  {% if cust.total_due and cust.total_due > 0 %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      ₹{{ "%.2f"|format(cust.total_due) }} Due
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Clear (₹0.00)
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right space-x-1.5 whitespace-nowrap">
+                  <a href="{{ url_for('customer_history', cust_id=cust._id) }}" title="View Bills" class="btn-secondary text-xs py-1 px-2.5">
+                    History
+                  </a>
+                  <a href="{{ url_for('edit_customer', cust_id=cust._id) }}" title="Edit Customer" class="btn-secondary text-xs py-1 px-2.5">
+                    Edit
+                  </a>
+                  <a href="{{ url_for('delete_customer', cust_id=cust._id) }}" onclick="return confirm('Delete customer?');" class="btn-danger text-xs py-1 px-2.5">
+                    Delete
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-12 text-center">
+          <i data-lucide="user-x" class="w-10 h-10 mx-auto text-gray-300"></i>
+          <p class="mt-3 text-sm font-medium text-gray-700">No customers found.</p>
+          <p class="text-xs text-gray-400">Add regular patrons or walk-in customers.</p>
+          <div class="mt-4">
+            <a href="{{ url_for('add_customer') }}" class="btn-primary text-xs">
+              Add Customer
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

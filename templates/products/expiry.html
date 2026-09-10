@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Expiry Tracking - Inventory & Billing{% endblock %}
+{% block header_title %}Product Expiry Tracking{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Perishable & Expiry Monitoring</h3>
+      <p class="text-xs text-gray-500">Track expired items and inventory nearing shelf-life expiration</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('stock_adjustment') }}" class="btn-secondary text-xs">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-500"></i>
+        <span>Write-off Expired</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-gray-500 uppercase">Expired Products</p>
+        <span class="p-1.5 bg-red-50 text-red-600 rounded-md">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold mt-2 text-red-600">{{ expired_products|length }}</p>
+      <p class="text-[11px] text-gray-400 mt-1">Should be removed from shelves immediately</p>
+    </div>
+
+    <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-gray-500 uppercase">Expiring in &le; 30 Days</p>
+        <span class="p-1.5 bg-amber-50 text-amber-600 rounded-md">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+        </span>
+      </div>
+      <p class="text-2xl font-bold mt-2 text-amber-700">{{ expiring_soon_products|length }}</p>
+      <p class="text-[11px] text-gray-400 mt-1">Consider prioritizing sales or discount promotions</p>
+    </div>
+  </div>
+
+  <!-- Expired Products Table -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <h4 class="text-xs font-semibold text-red-700 uppercase tracking-wider flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+        <span>Expired Products</span>
+      </h4>
+    </div>
+    <div class="overflow-x-auto">
+      {% if expired_products %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Code</th>
+              <th>Category</th>
+              <th>Current Stock</th>
+              <th>Expiry Date</th>
+              <th>Status</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for item in expired_products %}
+              <tr>
+                <td class="font-semibold text-gray-900">{{ item.product_name }}</td>
+                <td class="font-mono text-xs text-gray-600">{{ item.product_code }}</td>
+                <td class="text-xs text-gray-600">{{ item.category_name }}</td>
+                <td class="font-bold text-gray-900">{{ item.quantity }} units</td>
+                <td class="font-mono text-xs text-red-600 font-semibold">{{ item.expiry_date }}</td>
+                <td>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                    Expired
+                  </span>
+                </td>
+                <td class="text-right">
+                  <a href="{{ url_for('stock_adjustment', product_id=item._id) }}" class="btn-danger text-xs py-1 px-2.5">
+                    Write Off
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-8 text-center text-xs text-gray-400">
+          No expired products found in stock.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Expiring Soon Table -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+      <h4 class="text-xs font-semibold text-amber-700 uppercase tracking-wider flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span>Expiring Within 30 Days</span>
+      </h4>
+    </div>
+    <div class="overflow-x-auto">
+      {% if expiring_soon_products %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Code</th>
+              <th>Category</th>
+              <th>Current Stock</th>
+              <th>Expiry Date</th>
+              <th>Days Left</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for item in expiring_soon_products %}
+              <tr>
+                <td class="font-semibold text-gray-900">{{ item.product_name }}</td>
+                <td class="font-mono text-xs text-gray-600">{{ item.product_code }}</td>
+                <td class="text-xs text-gray-600">{{ item.category_name }}</td>
+                <td class="font-bold text-gray-900">{{ item.quantity }} units</td>
+                <td class="font-mono text-xs text-amber-700 font-semibold">{{ item.expiry_date }}</td>
+                <td class="text-xs font-bold text-amber-800">{{ item.days_left }} day{{ 's' if item.days_left != 1 else '' }}</td>
+                <td class="text-right">
+                  <a href="{{ url_for('edit_product', prd_id=item._id) }}" class="btn-secondary text-xs py-1 px-2.5">
+                    View Details
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-8 text-center text-xs text-gray-400">
+          No items expiring in the next 30 days.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

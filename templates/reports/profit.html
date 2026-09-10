@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Profit & Inventory Valuation - Inventory & Billing{% endblock %}
+{% block header_title %}Profit & Inventory Report (Module 29){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">Financial Estimates & Stock Valuation</h3>
+      <p class="text-xs text-gray-500">Gross profit analysis and current warehouse asset valuation</p>
+    </div>
+  </div>
+
+  <!-- Key Financial Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Total Sales Revenue</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2 font-mono">₹{{ "%.2f"|format(total_revenue) }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">From all completed customer sales</p>
+    </div>
+
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Cost of Goods Sold (COGS)</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2 font-mono">₹{{ "%.2f"|format(total_cost) }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">Wholesale cost of items sold</p>
+    </div>
+
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-emerald-700 uppercase">Estimated Profit</p>
+      <h3 class="text-2xl font-bold text-emerald-700 mt-2 font-mono">₹{{ "%.2f"|format(estimated_profit) }}</h3>
+      <p class="text-[11px] text-gray-500 mt-1 font-medium">Margin: {{ "%.1f"|format(profit_margin) }}%</p>
+    </div>
+
+    <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+      <p class="text-xs font-semibold text-gray-500 uppercase">Current Inventory Valuation</p>
+      <h3 class="text-2xl font-bold text-gray-900 mt-2 font-mono">₹{{ "%.2f"|format(inventory_cost_value) }}</h3>
+      <p class="text-[11px] text-gray-400 mt-1">At wholesale purchase price</p>
+    </div>
+
+  </div>
+
+  <!-- Note on Calculations -->
+  <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600 flex items-start gap-2.5">
+    <i data-lucide="info" class="w-4 h-4 text-gray-500 mt-0.5 shrink-0"></i>
+    <div>
+      <p class="font-semibold text-gray-800">Student Project Accounting Note:</p>
+      <p class="mt-0.5 text-gray-500">
+        Figures shown are <strong>Estimated Gross Profit</strong> calculated as <code class="font-mono text-black">Revenue - Purchase Cost of Sold Items</code>. Inventory value is based on <code class="font-mono text-black">Current Stock Quantity &times; Purchase Price</code>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Category-wise Inventory Valuation Breakdown -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="px-5 py-3.5 border-b border-gray-100">
+      <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider">Inventory Valuation by Category</h4>
+    </div>
+
+    <div class="overflow-x-auto">
+      {% if category_breakdown %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Total Products</th>
+              <th>Total Stock Units</th>
+              <th class="text-right">Valuation at Cost (₹)</th>
+              <th class="text-right">Potential Retail Value (₹)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for cat in category_breakdown %}
+              <tr>
+                <td class="font-semibold text-xs text-gray-900">{{ cat.name }}</td>
+                <td class="text-xs text-gray-600">{{ cat.product_count }} items</td>
+                <td class="text-xs font-mono font-bold text-gray-800">{{ cat.total_units }} units</td>
+                <td class="text-right font-mono text-xs font-bold text-gray-900">₹{{ "%.2f"|format(cat.cost_value) }}</td>
+                <td class="text-right font-mono text-xs text-gray-600">₹{{ "%.2f"|format(cat.retail_value) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-10 text-center text-xs text-gray-400">
+          No inventory categories recorded yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Management - Inventory & Billing{% endblock %}
+{% block header_title %}Stock & Inventory Levels{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">
+        {{ 'Low Stock Alert Table' if only_low else 'Current Stock Overview' }}
+      </h3>
+      <p class="text-xs text-gray-500">
+        {{ 'Items currently at or below their reorder threshold' if only_low else 'Monitor inventory counts, thresholds, and operational statuses' }}
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if only_low %}
+        <a href="{{ url_for('stock_management') }}" class="btn-secondary text-xs">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i>
+          <span>View All Stock</span>
+        </a>
+      {% else %}
+        <a href="{{ url_for('low_stock') }}" class="btn-secondary text-xs border-amber-300 bg-amber-50/50 text-amber-900">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>
+          <span>Low Stock Only ({{ low_stock_count }})</span>
+        </a>
+      {% endif %}
+      <a href="{{ url_for('stock_adjustment') }}" class="btn-primary text-xs">
+        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        <span>Stock Adjustment</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Table Card -->
+  <div class="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      {% if products %}
+        <table class="w-full text-left table-minimal">
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Code</th>
+              <th>Category</th>
+              <th>Current Quantity</th>
+              <th>Min Threshold</th>
+              <th>Stock Status</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for prd in products %}
+              <tr>
+                <td class="font-semibold text-gray-900">{{ prd.product_name }}</td>
+                <td class="font-mono text-xs text-gray-600">{{ prd.product_code }}</td>
+                <td class="text-xs text-gray-600">{{ prd.category_name }}</td>
+                <td class="font-mono font-bold text-sm {% if prd.quantity == 0 %}text-red-600{% elif prd.quantity <= prd.minimum_stock %}text-amber-700{% else %}text-gray-900{% endif %}">
+                  {{ prd.quantity }} units
+                </td>
+                <td class="font-mono text-xs text-gray-500">{{ prd.minimum_stock }} units</td>
+                <td>
+                  {% if prd.quantity == 0 %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                      Out of Stock
+                    </span>
+                  {% elif prd.quantity <= prd.minimum_stock %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                      Low Stock
+                    </span>
+                  {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      In Stock
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <a href="{{ url_for('stock_adjustment', product_id=prd._id) }}" class="btn-secondary text-xs py-1 px-2.5">
+                    Manual Adjust
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="py-12 text-center">
+          <i data-lucide="check-circle" class="w-10 h-10 mx-auto text-emerald-500"></i>
+          <p class="mt-3 text-sm font-medium text-gray-700">
+            {{ 'All products are sufficiently stocked!' if only_low else 'No products found.' }}
+          </p>
+          <p class="text-xs text-gray-400">
+            {{ 'No items currently require urgent supplier reorders.' if only_low else 'Add items to begin monitoring your inventory stock.' }}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

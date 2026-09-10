@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#f9fafb]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Inventory & Billing Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="flex flex-col justify-center min-h-full py-12 sm:px-6 lg:px-8 text-gray-900 bg-[#f9fafb]">
+  
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <!-- Store Brand Icon & Name -->
+    <div class="flex justify-center">
+      <div class="flex items-center justify-center w-12 h-12 bg-black rounded-xl text-white shadow-sm">
+        <i data-lucide="store" class="w-6 h-6"></i>
+      </div>
+    </div>
+    <h2 class="mt-4 text-2xl font-bold tracking-tight text-center text-gray-900">
+      {{ shop_profile.shop_name if shop_profile else 'Shree Ganesh General Store' }}
+    </h2>
+    <p class="mt-1 text-xs text-center text-gray-500 tracking-wide">
+      Inventory & Billing Management Software • TY BSc IT CEP
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="px-6 py-8 bg-white border border-gray-200 shadow-sm rounded-xl sm:px-10">
+      
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-5">
+            {% for category, message in messages %}
+              <div class="px-3.5 py-2.5 text-xs rounded-md border flex items-center gap-2 {% if category == 'error' %}bg-red-50 text-red-700 border-red-200{% else %}bg-emerald-50 text-emerald-700 border-emerald-200{% endif %}">
+                <i data-lucide="info" class="w-4 h-4"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form class="space-y-4" action="{{ url_for('login') }}" method="POST">
+        <div>
+          <label for="username" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Username or Email
+          </label>
+          <div class="mt-1.5">
+            <input id="username" name="username" type="text" autocomplete="username" required
+              value="admin"
+              class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition">
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Password
+          </label>
+          <div class="mt-1.5">
+            <input id="password" name="password" type="password" autocomplete="current-password" required
+              value="admin123"
+              class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition">
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full flex justify-center py-2.5 px-4 text-sm font-medium rounded-lg text-white bg-black hover:bg-gray-800 focus:outline-none transition">
+            Sign In to Dashboard
+          </button>
+        </div>
+      </form>
+
+      <!-- Student Demo Credentials Helper Box -->
+      <div class="mt-6 pt-5 border-t border-gray-100">
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs space-y-1.5 text-gray-600">
+          <div class="flex items-center gap-1.5 font-semibold text-gray-800">
+            <i data-lucide="key" class="w-3.5 h-3.5"></i>
+            <span>College Viva / Demo Credentials:</span>
+          </div>
+          <div class="flex justify-between items-center pt-1 border-t border-gray-200">
+            <span>Admin (Full Access):</span>
+            <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200 text-black">admin / admin123</code>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Staff (Cashier):</span>
+            <code class="font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200 text-black">suresh / staff123</code>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- College Project Footer -->
+    <p class="mt-6 text-xs text-center text-gray-400">
+      Designed & Developed for Community Engagement Project (CEP)<br>
+      Department of Information Technology
+    </p>
+  </div>
+
+  <script>
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

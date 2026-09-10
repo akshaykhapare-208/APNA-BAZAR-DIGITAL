@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}New Bill (POS) - Inventory & Billing{% endblock %}
+{% block header_title %}Point of Sale (New Bill){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Billing Top Banner -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-200 gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-sm font-bold bg-black text-white px-2.5 py-0.5 rounded">
+          {{ next_invoice_number }}
+        </span>
+        <h3 class="text-base font-semibold text-gray-900">Checkout Invoice Generation</h3>
+      </div>
+      <p class="text-xs text-gray-500 mt-0.5">Select customer, add products to cart, and calculate real-time bill totals</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('sales_history') }}" class="btn-secondary text-xs">
+        <i data-lucide="history" class="w-3.5 h-3.5"></i>
+        <span>Sales History</span>
+      </a>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('new_sale') }}" id="billing-form" onsubmit="return validateCheckout()">
+    
+    <input type="hidden" name="invoice_number" value="{{ next_invoice_number }}">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- LEFT 2 COLS: CUSTOMER SELECTION & PRODUCTS CART -->
+      <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Customer Details Box -->
+        <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs">
+          <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="user" class="w-4 h-4"></i>
+              <span>Customer Information (Module 16 & 20)</span>
+            </h4>
+            <a href="{{ url_for('add_customer') }}" target="_blank" class="text-xs text-gray-500 hover:text-black hover:underline flex items-center gap-1">
+              <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+              <span>New Customer?</span>
+            </a>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label for="customer_id" class="block text-xs font-semibold text-gray-700 uppercase">
+                Select Existing Customer
+              </label>
+              <select id="customer_id" name="customer_id" onchange="handleCustomerSelect(this)"
+                class="mt-1 block w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+                <option value="">-- Walk-in / Unregistered Customer --</option>
+                {% for c in customers %}
+                  <option value="{{ c._id }}" 
+                    data-name="{{ c.name }}" 
+                    data-phone="{{ c.phone }}" 
+                    data-due="{{ c.total_due or 0 }}"
+                    {% if selected_customer_id == c._id|string %}selected{% endif %}>
+                    {{ c.name }} ({{ c.phone }}) {% if c.total_due and c.total_due > 0 %}[Due: ₹{{ "%.2f"|format(c.total_due) }}]{% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label for="customer_name" class="block text-xs font-semibold text-gray-700 uppercase">
+                Customer Name <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="customer_name" name="customer_name" required placeholder="Walk-in Customer"
+                class="mt-1 block w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+            </div>
+
+            <div>
+              <label for="customer_phone" class="block text-xs font-semibold text-gray-700 uppercase">
+                Customer Phone
+              </label>
+              <input type="text" id="customer_phone" name="customer_phone" placeholder="+91 98XXX XXXXX"
+                class="mt-1 block w-full px-3 py-2 text-xs font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+            </div>
+
+            <div id="customer-due-badge" class="hidden flex items-center p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+              <i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-amber-600"></i>
+              <span>Customer has previous due: <strong id="prev-due-amount">₹0.00</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Cart Table -->
+        <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+              <span>Billing Items Cart (Module 20 & 22)</span>
+            </h4>
+            <button type="button" id="add-bill-row-btn" class="btn-secondary text-xs py-1 px-3">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Add Product Line</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left" id="cart-table">
+              <thead>
+                <tr class="border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase">
+                  <th class="pb-2 w-5/12">Product & Stock</th>
+                  <th class="pb-2 w-2/12">Price (₹)</th>
+                  <th class="pb-2 w-2/12">Quantity</th>
+                  <th class="pb-2 w-2/12 text-right">Total (₹)</th>
+                  <th class="pb-2 w-1/12 text-right"></th>
+                </tr>
+              </thead>
+              <tbody id="cart-tbody" class="divide-y divide-gray-100">
+                <!-- Cart Row 1 (Default) -->
+                <tr class="cart-row">
+                  <td class="py-3 pr-2">
+                    <select name="product_id[]" required onchange="handleBillProductSelect(this)"
+                      class="bill-product-select block w-full px-2.5 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+                      <option value="">-- Choose Product --</option>
+                      {% for p in products %}
+                        <option value="{{ p._id }}" 
+                          data-code="{{ p.product_code }}"
+                          data-name="{{ p.product_name }}"
+                          data-price="{{ p.selling_price }}" 
+                          data-cost="{{ p.purchase_price }}"
+                          data-stock="{{ p.quantity }}">
+                          {{ p.product_name }} (Stock: {{ p.quantity }})
+                        </option>
+                      {% endfor %}
+                    </select>
+                    <div class="stock-warning text-[10px] font-semibold text-red-600 mt-1 hidden">
+                      Insufficient stock!
+                    </div>
+                  </td>
+                  <td class="py-3 px-2">
+                    <input type="number" step="0.01" min="0" name="price[]" value="0.00" required oninput="calcCart()"
+                      class="price-field block w-full px-2.5 py-2 text-xs font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+                  </td>
+                  <td class="py-3 px-2">
+                    <input type="number" min="1" name="quantity[]" value="1" required oninput="calcCart()"
+                      class="qty-field block w-full px-2.5 py-2 text-xs font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+                  </td>
+                  <td class="py-3 pl-2 text-right font-mono font-bold text-xs text-gray-900 line-total-cell">
+                    ₹0.00
+                  </td>
+                  <td class="py-3 pl-2 text-right">
+                    <button type="button" onclick="removeBillRow(this)" class="p-1 text-gray-400 hover:text-red-600 rounded">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pt-2">
+            <p class="text-[11px] text-gray-400">
+              Tip: The system checks stock in real time. Products with 0 stock cannot be sold.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT 1 COL: CALCULATIONS & PAYMENT (Module 19, 22) -->
+      <div class="space-y-6">
+        
+        <div class="p-5 bg-white border border-gray-200 rounded-xl shadow-xs space-y-4">
+          <h4 class="text-xs font-semibold text-gray-900 uppercase tracking-wider pb-3 border-b border-gray-100 flex items-center gap-2">
+            <i data-lucide="calculator" class="w-4 h-4"></i>
+            <span>Bill Calculation Summary</span>
+          </h4>
+
+          <div class="space-y-3 text-xs">
+            
+            <!-- Subtotal -->
+            <div class="flex justify-between items-center text-gray-600">
+              <span>Subtotal:</span>
+              <span id="display-subtotal" class="font-mono font-semibold text-gray-900">₹0.00</span>
+              <input type="hidden" id="input-subtotal" name="subtotal" value="0.00">
+            </div>
+
+            <!-- Discount -->
+            <div class="flex justify-between items-center text-gray-600">
+              <label for="discount" class="cursor-pointer">Discount (₹):</label>
+              <input type="number" step="0.01" min="0" id="discount" name="discount" value="0.00" oninput="calcCart()"
+                class="w-24 px-2 py-1 text-right text-xs font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-black">
+            </div>
+
+            <!-- Tax Rate (GST%) -->
+            <div class="flex justify-between items-center text-gray-600">
+              <label for="tax_percent" class="cursor-pointer">Tax / GST (%):</label>
+              <div class="flex items-center gap-1">
+                <input type="number" step="0.5" min="0" id="tax_percent" name="tax_percent" value="{{ shop_profile.tax_rate or 0 }}" oninput="calcCart()"
+                  class="w-16 px-2 py-1 text-right text-xs font-mono border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-black">
+                <span class="text-gray-400">%</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-gray-500 text-[11px]">
+              <span>Calculated Tax Amount:</span>
+              <span id="display-tax" class="font-mono">₹0.00</span>
+              <input type="hidden" id="input-tax" name="tax" value="0.00">
+            </div>
+
+            <div class="pt-3 border-t border-gray-200">
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-bold text-gray-900">Grand Total:</span>
+                <span id="display-grand-total" class="text-xl font-bold font-mono text-gray-900">₹0.00</span>
+                <input type="hidden" id="input-grand-total" name="grand_total" value="0.00">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Payment Section (Module 19: Payment Status) -->
+          <div class="pt-4 border-t border-gray-100 space-y-3">
+            <h5 class="text-xs font-semibold text-gray-700 uppercase">Payment Details</h5>
+
+            <div>
+              <label for="paid_amount" class="block text-[11px] font-semibold text-gray-500 uppercase">
+                Amount Paid by Customer (₹)
+              </label>
+              <div class="mt-1 relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-gray-400 text-xs">₹</span>
+                <input type="number" step="0.01" min="0" id="paid_amount" name="paid_amount" value="0.00" oninput="calcCart()" required
+                  class="block w-full pl-6 pr-3 py-1.5 text-xs font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs pt-1">
+              <span class="text-gray-600">Remaining Balance (Due):</span>
+              <span id="display-due" class="font-mono font-bold text-amber-700">₹0.00</span>
+              <input type="hidden" id="input-due" name="due_amount" value="0.00">
+            </div>
+
+            <div class="flex justify-between items-center text-xs pt-1">
+              <span class="text-gray-600">Payment Status:</span>
+              <span id="display-status-badge" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-800">
+                Pending
+              </span>
+              <input type="hidden" id="input-payment-status" name="payment_status" value="Due">
+            </div>
+
+            <div>
+              <label for="payment_mode" class="block text-[11px] font-semibold text-gray-500 uppercase">
+                Payment Mode
+              </label>
+              <select id="payment_mode" name="payment_mode" class="mt-1 block w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none">
+                <option value="Cash">Cash</option>
+                <option value="UPI / QR">UPI (GPay / PhonePe / Paytm)</option>
+                <option value="Card">Debit / Credit Card</option>
+                <option value="Credit / Khata">Credit / Due (Khata)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-4 border-t border-gray-100">
+            <button type="submit" id="submit-bill-btn" class="w-full btn-primary justify-center py-2.5 text-xs">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>Generate Bill & Print</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </form>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Dynamic POS Billing Engine
+  function handleCustomerSelect(selectElem) {
+    const selected = selectElem.options[selectElem.selectedIndex];
+    const nameInput = document.getElementById('customer_name');
+    const phoneInput = document.getElementById('customer_phone');
+    const dueBadge = document.getElementById('customer-due-badge');
+    const prevDueAmount = document.getElementById('prev-due-amount');
+
+    if (selected.value) {
+      nameInput.value = selected.getAttribute('data-name') || '';
+      phoneInput.value = selected.getAttribute('data-phone') || '';
+      const due = parseFloat(selected.getAttribute('data-due')) || 0;
+      if (due > 0) {
+        prevDueAmount.innerText = '₹' + due.toFixed(2);
+        dueBadge.classList.remove('hidden');
+      } else {
+        dueBadge.classList.add('hidden');
+      }
+    } else {
+      nameInput.value = 'Walk-in Customer';
+      phoneInput.value = '';
+      dueBadge.classList.add('hidden');
+    }
+  }
+
+  // Trigger initial customer load if pre-selected
+  document.addEventListener("DOMContentLoaded", function () {
+    const custSelect = document.getElementById('customer_id');
+    if (custSelect && custSelect.value) {
+      handleCustomerSelect(custSelect);
+    } else {
+      document.getElementById('customer_name').value = 'Walk-in Customer';
+    }
+    calcCart();
+  });
+
+  function handleBillProductSelect(selectElem) {
+    const row = selectElem.closest('.cart-row');
+    const selected = selectElem.options[selectElem.selectedIndex];
+    const priceField = row.querySelector('.price-field');
+    const qtyField = row.querySelector('.qty-field');
+    const stockWarning = row.querySelector('.stock-warning');
+
+    if (selected.value) {
+      const price = parseFloat(selected.getAttribute('data-price')) || 0;
+      const stock = parseInt(selected.getAttribute('data-stock')) || 0;
+
+      priceField.value = price.toFixed(2);
+      
+      if (stock <= 0) {
+        stockWarning.innerText = "Insufficient stock! (0 available)";
+        stockWarning.classList.remove('hidden');
+      } else {
+        stockWarning.classList.add('hidden');
+      }
+    } else {
+      priceField.value = '0.00';
+      stockWarning.classList.add('hidden');
+    }
+    calcCart();
+  }
+
+  function calcCart() {
+    let subtotal = 0;
+    let hasStockIssue = false;
+
+    document.querySelectorAll('.cart-row').forEach(row => {
+      const select = row.querySelector('.bill-product-select');
+      const selectedOption = select.options[select.selectedIndex];
+      const stock = parseInt(selectedOption.getAttribute('data-stock') || 9999);
+      const qty = parseInt(row.querySelector('.qty-field').value) || 0;
+      const price = parseFloat(row.querySelector('.price-field').value) || 0;
+      const warning = row.querySelector('.stock-warning');
+
+      if (select.value && qty > stock) {
+        warning.innerText = `Insufficient stock! Only ${stock} available.`;
+        warning.classList.remove('hidden');
+        hasStockIssue = true;
+      } else if (select.value && stock <= 0) {
+        warning.innerText = "Insufficient stock! (0 available)";
+        warning.classList.remove('hidden');
+        hasStockIssue = true;
+      } else {
+        warning.classList.add('hidden');
+      }
+
+      const rowTotal = qty * price;
+      row.querySelector('.line-total-cell').innerText = '₹' + rowTotal.toFixed(2);
+      subtotal += rowTotal;
+    });
+
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const taxPercent = parseFloat(document.getElementById('tax_percent').value) || 0;
+
+    const discountedSubtotal = Math.max(0, subtotal - discount);
+    const taxAmount = (discountedSubtotal * taxPercent) / 100;
+    const grandTotal = discountedSubtotal + taxAmount;
+
+    // Display fields
+    document.getElementById('display-subtotal').innerText = '₹' + subtotal.toFixed(2);
+    document.getElementById('input-subtotal').value = subtotal.toFixed(2);
+
+    document.getElementById('display-tax').innerText = '₹' + taxAmount.toFixed(2);
+    document.getElementById('input-tax').value = taxAmount.toFixed(2);
+
+    document.getElementById('display-grand-total').innerText = '₹' + grandTotal.toFixed(2);
+    document.getElementById('input-grand-total').value = grandTotal.toFixed(2);
+
+    // Paid & Due
+    const paidInput = document.getElementById('paid_amount');
+    let paid = parseFloat(paidInput.value);
+    if (isNaN(paid)) paid = 0;
+
+    // Auto set paid amount if user hasn't typed a custom value and grandTotal just changed
+    if (paidInput.dataset.touched !== "true" && grandTotal > 0) {
+      paid = grandTotal;
+      paidInput.value = grandTotal.toFixed(2);
+    }
+
+    const due = Math.max(0, grandTotal - paid);
+    document.getElementById('display-due').innerText = '₹' + due.toFixed(2);
+    document.getElementById('input-due').value = due.toFixed(2);
+
+    // Payment Status Badge
+    const statusBadge = document.getElementById('display-status-badge');
+    const statusInput = document.getElementById('input-payment-status');
+
+    if (grandTotal === 0) {
+      statusBadge.innerText = 'Pending';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-800';
+      statusInput.value = 'Due';
+    } else if (paid >= grandTotal) {
+      statusBadge.innerText = 'Paid';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200';
+      statusInput.value = 'Paid';
+    } else if (paid > 0 && paid < grandTotal) {
+      statusBadge.innerText = 'Partial';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200';
+      statusInput.value = 'Partial';
+    } else {
+      statusBadge.innerText = 'Due';
+      statusBadge.className = 'px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200';
+      statusInput.value = 'Due';
+    }
+  }
+
+  document.getElementById('paid_amount').addEventListener('input', function() {
+    this.dataset.touched = "true";
+  });
+
+  function removeBillRow(btn) {
+    const rows = document.querySelectorAll('.cart-row');
+    if (rows.length > 1) {
+      btn.closest('.cart-row').remove();
+      calcCart();
+    } else {
+      alert("At least one product line is required in the bill.");
+    }
+  }
+
+  document.getElementById('add-bill-row-btn').addEventListener('click', function () {
+    const tbody = document.getElementById('cart-tbody');
+    const firstRow = document.querySelector('.cart-row');
+    const clone = firstRow.cloneNode(true);
+    clone.querySelector('.bill-product-select').selectedIndex = 0;
+    clone.querySelector('.qty-field').value = 1;
+    clone.querySelector('.price-field').value = '0.00';
+    clone.querySelector('.line-total-cell').innerText = '₹0.00';
+    clone.querySelector('.stock-warning').classList.add('hidden');
+    tbody.appendChild(clone);
+    if (window.lucide) window.lucide.createIcons();
+  });
+
+  function validateCheckout() {
+    let valid = true;
+    let hasItems = false;
+
+    document.querySelectorAll('.cart-row').forEach(row => {
+      const select = row.querySelector('.bill-product-select');
+      if (select.value) {
+        hasItems = true;
+        const selected = select.options[select.selectedIndex];
+        const stock = parseInt(selected.getAttribute('data-stock')) || 0;
+        const qty = parseInt(row.querySelector('.qty-field').value) || 0;
+        if (qty > stock || stock <= 0) {
+          alert(`Insufficient stock for product: ${selected.getAttribute('data-name')}. Available: ${stock}`);
+          valid = false;
+        }
+      }
+    });
+
+    if (!hasItems) {
+      alert("Please select at least one product for billing.");
+      return false;
+    }
+
+    return valid;
+  }
+</script>
+{% endblock %}

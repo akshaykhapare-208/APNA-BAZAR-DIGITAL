@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit User' if edit_user else 'Add User' }} - Inventory & Billing{% endblock %}
+{% block header_title %}{{ 'Edit User' if edit_user else 'New User' }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center justify-between pb-3 border-b border-gray-200">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900">{{ 'Edit User Profile' if edit_user else 'Add New User' }}</h3>
+      <p class="text-xs text-gray-500">Create staff or admin account credentials</p>
+    </div>
+    <a href="{{ url_for('users') }}" class="btn-secondary text-xs">
+      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+      <span>Back to Users</span>
+    </a>
+  </div>
+
+  <div class="p-6 bg-white border border-gray-200 rounded-xl shadow-xs">
+    <form method="POST" class="space-y-4">
+      
+      <div>
+        <label for="name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Full Name <span class="text-red-500">*</span>
+        </label>
+        <div class="mt-1.5">
+          <input type="text" id="name" name="name" required placeholder="e.g. Ramesh Gupta"
+            value="{{ edit_user.name if edit_user else '' }}"
+            class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="username" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Username <span class="text-red-500">*</span>
+          </label>
+          <div class="mt-1.5">
+            <input type="text" id="username" name="username" required placeholder="e.g. ramesh"
+              value="{{ edit_user.username if edit_user else '' }}"
+              {% if edit_user and edit_user.username == 'admin' %}readonly class="bg-gray-100 block w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg"{% else %}class="block w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black"{% endif %}>
+          </div>
+        </div>
+
+        <div>
+          <label for="role" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Role <span class="text-red-500">*</span>
+          </label>
+          <div class="mt-1.5">
+            <select id="role" name="role" required
+              class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+              <option value="Staff" {% if edit_user and edit_user.role == 'Staff' %}selected{% endif %}>Staff (Cashier)</option>
+              <option value="Admin" {% if edit_user and edit_user.role == 'Admin' %}selected{% endif %}>Admin (Store Owner / Full Access)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="phone" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Phone Number
+          </label>
+          <div class="mt-1.5">
+            <input type="text" id="phone" name="phone" placeholder="+91 98XXX XXXXX"
+              value="{{ edit_user.phone if edit_user else '' }}"
+              class="block w-full px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+            Email Address
+          </label>
+          <div class="mt-1.5">
+            <input type="email" id="email" name="email" placeholder="user@store.com"
+              value="{{ edit_user.email if edit_user else '' }}"
+              class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label for="password" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          Password {% if not edit_user %}<span class="text-red-500">*</span>{% else %}(Leave blank to keep unchanged){% endif %}
+        </label>
+        <div class="mt-1.5">
+          <input type="password" id="password" name="password" {% if not edit_user %}required{% endif %} placeholder="Enter strong password"
+            class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-black">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <a href="{{ url_for('users') }}" class="btn-secondary text-xs">Cancel</a>
+        <button type="submit" class="btn-primary text-xs">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i>
+          <span>{{ 'Update User' if edit_user else 'Create User' }}</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}
