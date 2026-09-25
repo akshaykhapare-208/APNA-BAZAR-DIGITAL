@@ -24,9 +24,9 @@ def init_db():
 
     # Attempt to connect to MongoDB Atlas / Remote MongoDB
     if uri:
+        # First attempt: With certifi CA certificates
         try:
             print(f"[DB] Attempting connection to MongoDB: {uri.split('@')[-1] if '@' in uri else uri}...")
-            # Use certifi CA file if available for secure SSL connection
             ca = certifi.where() if certifi else None
             _client = pymongo.MongoClient(
                 uri,
@@ -34,15 +34,27 @@ def init_db():
                 serverSelectionTimeoutMS=4000,
                 connectTimeoutMS=4000
             )
-            # Force a ping command to verify credentials and connectivity
             _client.admin.command('ping')
             _db = _client[db_name]
             DB_STATUS_MESSAGE = "Connected to MongoDB Atlas successfully"
             print(f"[DB] [OK] {DB_STATUS_MESSAGE} (Database: {db_name})")
             return _db
-        except Exception as e:
-            print(f"[DB] ! MongoDB Connection Note: Could not connect to remote Atlas cluster directly ({e}).")
-            print("[DB] ! (Tip: Ensure '0.0.0.0/0' is added in MongoDB Atlas -> Network Access tab).")
+        except Exception as e_certifi:
+            # Second attempt: Without explicit CA file (standard platform certificate store)
+            try:
+                _client = pymongo.MongoClient(
+                    uri,
+                    serverSelectionTimeoutMS=4000,
+                    connectTimeoutMS=4000
+                )
+                _client.admin.command('ping')
+                _db = _client[db_name]
+                DB_STATUS_MESSAGE = "Connected to MongoDB Atlas successfully"
+                print(f"[DB] [OK] {DB_STATUS_MESSAGE} (Database: {db_name})")
+                return _db
+            except Exception as e_direct:
+                print(f"[DB] ! MongoDB Connection Note: Could not connect to remote Atlas cluster ({e_direct}).")
+                print("[DB] ! (Tip: Ensure '0.0.0.0/0' is added in MongoDB Atlas -> Network Access tab).")
 
     # Fallback to mongomock for smooth local operation without crashes
     try:
